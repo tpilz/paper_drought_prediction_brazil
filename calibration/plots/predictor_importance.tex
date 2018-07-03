@@ -1,0 +1,38 @@
+\documentclass{article}
+\usepackage{booktabs}
+\usepackage{longtable}
+\usepackage{array}
+\usepackage{multirow}
+\usepackage[table]{xcolor}
+\usepackage{wrapfig}
+\usepackage{float}
+\usepackage{colortbl}
+\usepackage{pdflscape}
+\usepackage{tabu}
+\usepackage{threeparttable}
+\usepackage{threeparttablex}
+\usepackage[normalem]{ulem}
+\usepackage{makecell}
+\begin{document}
+
+\begin{landscape}\begin{table}[H]
+\centering\rowcolors{2}{gray!6}{white}
+
+\begin{tabular}{lllllllll}
+\hiderowcolors
+\toprule
+\multicolumn{1}{c}{ } & \multicolumn{8}{c}{Relative predictor importance (\%)} \\
+\cmidrule(l{2pt}r{2pt}){2-9}
+Response & capacity & area.up & res.no.up & diff.class & prec.maxday & prec.reg & prec.prev12 & prec.prev36\\
+\midrule
+\showrowcolors
+KGE & \multicolumn{1}{r}{\bgroup\fontsize{8}{10}\selectfont 0\egroup{}} & \multicolumn{1}{r}{\bgroup\fontsize{10}{12}\selectfont 14\egroup{}} & \multicolumn{1}{r}{\bgroup\fontsize{8}{10}\selectfont 0\egroup{}} & \multicolumn{1}{r}{\bgroup\fontsize{8}{10}\selectfont 0\egroup{}} & \multicolumn{1}{r}{\bgroup\fontsize{8}{10}\selectfont 1\egroup{}} & \multicolumn{1}{r}{\bgroup\fontsize{8}{10}\selectfont 1\egroup{}} & \multicolumn{1}{r}{\bgroup\fontsize{12}{14}\selectfont 28\egroup{}} & \multicolumn{1}{r}{\bgroup\fontsize{15}{17}\selectfont 55\egroup{}}\\
+COR & \multicolumn{1}{r}{\bgroup\fontsize{16}{18}\selectfont 60\egroup{}} & \multicolumn{1}{r}{\bgroup\fontsize{10}{12}\selectfont 14\egroup{}} & \multicolumn{1}{r}{\bgroup\fontsize{8}{10}\selectfont 0\egroup{}} & \multicolumn{1}{r}{\bgroup\fontsize{8}{10}\selectfont 0\egroup{}} & \multicolumn{1}{r}{\bgroup\fontsize{8}{10}\selectfont 1\egroup{}} & \multicolumn{1}{r}{\bgroup\fontsize{8}{10}\selectfont 2\egroup{}} & \multicolumn{1}{r}{\bgroup\fontsize{8}{10}\selectfont 2\egroup{}} & \multicolumn{1}{r}{\bgroup\fontsize{11}{13}\selectfont 20\egroup{}}\\
+BIAS & \multicolumn{1}{r}{\bgroup\fontsize{15}{17}\selectfont 52\egroup{}} & \multicolumn{1}{r}{\bgroup\fontsize{11}{13}\selectfont 22\egroup{}} & \multicolumn{1}{r}{\bgroup\fontsize{10}{12}\selectfont 15\egroup{}} & \multicolumn{1}{r}{\bgroup\fontsize{8}{10}\selectfont 0\egroup{}} & \multicolumn{1}{r}{\bgroup\fontsize{8}{10}\selectfont 2\egroup{}} & \multicolumn{1}{r}{\bgroup\fontsize{8}{10}\selectfont 2\egroup{}} & \multicolumn{1}{r}{\bgroup\fontsize{8}{10}\selectfont 3\egroup{}} & \multicolumn{1}{r}{\bgroup\fontsize{9}{11}\selectfont 5\egroup{}}\\
+VAR & \multicolumn{1}{r}{\bgroup\fontsize{11}{13}\selectfont 24\egroup{}} & \multicolumn{1}{r}{\bgroup\fontsize{10}{12}\selectfont 15\egroup{}} & \multicolumn{1}{r}{\bgroup\fontsize{9}{11}\selectfont 7\egroup{}} & \multicolumn{1}{r}{\bgroup\fontsize{8}{10}\selectfont 0\egroup{}} & \multicolumn{1}{r}{\bgroup\fontsize{9}{11}\selectfont 5\egroup{}} & \multicolumn{1}{r}{\bgroup\fontsize{9}{11}\selectfont 4\egroup{}} & \multicolumn{1}{r}{\bgroup\fontsize{10}{12}\selectfont 13\egroup{}} & \multicolumn{1}{r}{\bgroup\fontsize{12}{14}\selectfont 31\egroup{}}\\
+\bottomrule
+\end{tabular}
+\rowcolors{2}{white}{white}
+\end{table}
+\end{landscape}
+\end{document}
