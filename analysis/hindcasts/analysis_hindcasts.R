@@ -25,8 +25,8 @@
 
 # tidy R and visualisation
 library(tidyverse)
+library(zoo)
 library(lubridate)
-library(flux) # for calculation of area under curve
 # ggplot stuff
 library(scales) # colour scales
 library(gtable) # add annotation outside plot region
@@ -78,6 +78,9 @@ file_out_rmse_single_res <- "plots/accuracy_rmse_perf_ens_single_res.pdf"
 file_out_scores_mixed <- "plots/scores_mixed_region.pdf"
 # output: rmse, bss, rocss comparison bias corrected vs. uncorrected forcing
 file_out_scores_mixed_biascor <- "plots/scores_mixed_region_biascor.pdf"
+
+# output: average regional storange changes
+file_out_storage_change <- "plots/storage_changes.pdf"
 
 
 ### CALCULATIONS ###-----------------------------------------------------------
@@ -301,6 +304,34 @@ dat_all <- dat_all %>%
          drought_sim = if_else(value < drought_thresh_index, 1, 0))
 
 
+# calc monthly rate of change of drought index #-------------------------------
+
+dat_stor_change <- dat_all %>%
+  # select vars
+  select(model, group, realis, region, year, month, value) %>%
+  distinct() %>%
+  # include observations
+  bind_rows(.,
+            dat_obs_reg %>%
+              filter(month %in% 1:6) %>%
+              select(region, year, month, value) %>%
+              mutate(model = "obs", group = "obs", realis = NA)) %>%
+  # join initial values for every year = december observation of last year
+  complete(month = 0:6, nesting(model, group, realis, region, year)) %>%
+  left_join(.,
+            dat_obs_reg %>%
+              filter(month == 12) %>%
+              select(region, year, value, -month) %>%
+              mutate(year = year+1) %>%
+              rename(init = value),
+            by = c("region", "year")) %>%
+  mutate(value = if_else(month == 0, init, value)) %>%
+  select(-init) %>%
+  # calculate monthly change
+  group_by(model, group, realis, region, year) %>%
+  mutate(value_change = c(NA,diff(value)))
+
+
 # calc. contingency table #----------------------------------------------------
 
 # first bin will be exactly zero and last bin exactly 1! E.g. for 10 % steps set to 12
@@ -410,7 +441,7 @@ dat_hit_alarm <- lapply(no_bins, function(j) {
 # calculate roc skill score via area under curve
 dat_roc <- dat_hit_alarm %>%
   group_by(drought_thresh, group_bins, group, model, region, predictor, value_pred) %>%
-  summarise(auc = auc(far, hr)) %>%
+  summarise(auc = sum(diff(far) * rollmean(hr, 2))) %>%
   mutate(rocss = 2*auc - 1)
 
 
@@ -477,7 +508,7 @@ dat_bs_tab <- dat_ctab %>%
   ungroup() %>%
   mutate(region = factor(region, c("all", "Jaguaribe", "Oros", "Salgado", "Castanhao", "Banabuiu"),
                          labels = c("Combined", "Lower\n Jaguaribe", "Orós", "Salgado", "Castanhão", "Banabuiú")),
-         model = factor(model, c("hydmod", "regression"), labels = c("Numerical", "Statistical")))
+         model = factor(model, c("hydmod", "regression"), labels = c("Process-based", "Statistical")))
 
 dat_bs_decomp <- dat_bs_tab %>%
   group_by(drought_thresh, group_bins, group, model, region, predictor) %>%
@@ -520,21 +551,26 @@ dat_rmse_t <- left_join(dat_all %>%
   drop_na(predictor, value_pred)
 
 # rmse in dependence of all predictors per model x region (and all regions) combinations
-dat_rmse <- bind_rows(dat_rmse_t %>%
+dat_rmse <- bind_rows(# ens. member X model X region X single res. / wetness cond.
+                      dat_rmse_t %>%
                         group_by(group, model, region, predictor, value_pred) %>%
                         summarise(rmse = sqrt(mean((value-obs)^2))),
+                      # ens. member X model X wetness cond.
                       dat_rmse_t %>%
                         filter(predictor != "single_reservoir") %>%
                         group_by(group, model, predictor, value_pred) %>%
                         summarise(rmse = sqrt(mean((value-obs)^2))) %>%
                         mutate(region = "all"),
-                      dat_rmse_t %>% # model x region x month
+                      # ens. member X model X region X month
+                      dat_rmse_t %>%
+                        filter(predictor != "single_reservoir") %>%
                         group_by(group, model, region, month) %>%
                         distinct(group, model, region, year, month, value, obs) %>%
                         summarise(rmse = sqrt(mean((value-obs)^2))) %>%
                         rename(lead_time = month) %>%
                         gather(key = predictor, value = value_pred, lead_time) %>%
                         mutate(value_pred = as.character(value_pred)),
+                      # ens. member X model X month
                       dat_rmse_t %>%
                         filter(predictor != "single_reservoir") %>%
                         group_by(group, model, month) %>%
@@ -543,6 +579,7 @@ dat_rmse <- bind_rows(dat_rmse_t %>%
                         rename(lead_time = month) %>%
                         gather(key = predictor, value = value_pred, lead_time) %>%
                         mutate(region = "all", value_pred = as.character(value_pred)),
+                      # ens. member X model X region
                       dat_rmse_t %>%
                         filter(predictor != "single_reservoir") %>%
                         group_by(group, model, region, year, month, predictor) %>%
@@ -552,6 +589,7 @@ dat_rmse <- bind_rows(dat_rmse_t %>%
                         mutate(lead_time = "all") %>%
                         gather(key = predictor, value = value_pred, lead_time) %>%
                         mutate(value_pred = as.character(value_pred)),
+                      # ens. member X model
                       dat_rmse_t %>%
                         filter(predictor != "single_reservoir") %>%
                         group_by(group, model, region, year, month, predictor) %>%
@@ -565,7 +603,7 @@ dat_rmse <- bind_rows(dat_rmse_t %>%
   ungroup() %>%
   mutate(region = factor(region, c("all", "Jaguaribe", "Oros", "Salgado", "Castanhao", "Banabuiu"),
                          labels = c("Combined", "Lower\n Jaguaribe", "Orós", "Salgado", "Castanhão", "Banabuiú")),
-         model = factor(model, c("hydmod", "regression"), labels = c("Numerical", "Statistical")))
+         model = factor(model, c("hydmod", "regression"), labels = c("Process-based", "Statistical")))
 
 
 
@@ -742,7 +780,7 @@ dat_plot_t <- dat_rmse %>%
   subset(grepl("single_reservoir", predictor) & !grepl("biascor", group)) %>%
   bind_rows(.,
             dat_rmse %>%
-              filter(model == "Numerical" & region != "Combined" & !grepl("biascor", group) &
+              filter(model == "Process-based" & region != "Combined" & !grepl("biascor", group) &
                        predictor == "lead_time" & value_pred == "all")) %>%
   separate(col=group, into=c("group", "realis"), sep="_", fill="right") %>%
   filter(grepl("^ensemble|perfect", group)) %>%
@@ -784,7 +822,7 @@ dat_plot_t <- bind_rows(
     select(model, region, score, value, group) %>%
     mutate(region = factor(region, c("all", "Jaguaribe", "Oros", "Salgado", "Castanhao", "Banabuiu"),
                            labels = c("Combined", "Lower\n Jaguaribe", "Orós", "Salgado", "Castanhão", "Banabuiú")),
-           model = factor(model, c("hydmod", "regression"), labels = c("Numerical", "Statistical"))),
+           model = factor(model, c("hydmod", "regression"), labels = c("Process-based", "Statistical"))),
   # get BSS
   dat_bs %>%
     ungroup() %>%
@@ -794,7 +832,7 @@ dat_plot_t <- bind_rows(
     ungroup() %>%
     mutate(region = factor(region, c("all", "Jaguaribe", "Oros", "Salgado", "Castanhao", "Banabuiu"),
                            labels = c("Combined", "Lower\n Jaguaribe", "Orós", "Salgado", "Castanhão", "Banabuiú")),
-           model = factor(model, c("hydmod", "regression"), labels = c("Numerical", "Statistical"))) %>%
+           model = factor(model, c("hydmod", "regression"), labels = c("Process-based", "Statistical"))) %>%
     rename(value = score_val) %>%
     select(model, region, value, group, -score) %>%
     mutate(score = "BSS", group = gsub("biascor", "Hindcasts_biascor", group),
@@ -809,13 +847,13 @@ gp <- ggplot(subset(dat_plot_t, !grepl("Perfect|biascor", group)),
   geom_vline(xintercept = 1.5, linetype = "dashed", size=1.5) +
   # plot RMSE with 'perfect' forcing as errorbar in bars; NEEDS MANUAL ADJUSTMENT IF ADJUSTING DATASET!
   geom_errorbarh(data = subset(dat_plot_t, group == "Perfect"),
-                 mapping = aes(xmin=if_else(model == "Numerical", as.numeric(region)-0.35, as.numeric(region)), 
-                               xmax=if_else(model == "Numerical", as.numeric(region), as.numeric(region)+0.35)),
+                 mapping = aes(xmin=if_else(model == "Process-based", as.numeric(region)-0.35, as.numeric(region)), 
+                               xmax=if_else(model == "Process-based", as.numeric(region), as.numeric(region)+0.35)),
                  linetype = "dashed") +
   # workaround to define axes limits for facets (as far as I know there is no simpler solution)
   geom_blank(data=data.frame(region="Combined", value=c(0,50, 0,1, 0,1),
                              score=c("RMSE (percent point)", "RMSE (percent point)", "ROCSS (-)", "ROCSS (-)", "BSS (-)", "BSS (-)"),
-                             model="Numerical", group = "Hindcasts")) +
+                             model="Process-based", group = "Hindcasts")) +
   labs(x = "Region", y = "", fill = "Model: ") +
   facet_grid(score ~ ., scales = "free_y") +
   theme_bw(base_size = 20) +
@@ -830,13 +868,13 @@ gp <- ggplot(subset(dat_plot_t, group != "Perfect"),
   geom_vline(xintercept = 1.5, linetype = "dashed", size=1.5) +
   # plot RMSE with 'perfect' forcing as errorbar in bars; NEEDS MANUAL ADJUSTMENT IF ADJUSTING DATASET!
   geom_errorbarh(data = subset(dat_plot_t, group == "Perfect"),
-                 mapping = aes(xmin=if_else(model == "Numerical", as.numeric(region)-0.35, as.numeric(region)), 
-                               xmax=if_else(model == "Numerical", as.numeric(region), as.numeric(region)+0.35)),
+                 mapping = aes(xmin=if_else(model == "Process-based", as.numeric(region)-0.35, as.numeric(region)), 
+                               xmax=if_else(model == "Process-based", as.numeric(region), as.numeric(region)+0.35)),
                  linetype = "dashed") +
   # workaround to define axes limits for facets (as far as I know there is no simpler solution)
   geom_blank(data=data.frame(region="Combined", value=c(0,50, 0,1, 0,1),
                              score=c("RMSE (percent point)", "RMSE (percent point)", "ROCSS (-)", "ROCSS (-)", "BSS (-)", "BSS (-)"),
-                             model="Numerical", group = "Hindcasts")) +
+                             model="Process-based", group = "Hindcasts")) +
   labs(x = "Region", y = "", fill = "Model: ", linetype = "Hindcasts: ") +
   scale_linetype_manual(labels = c("Uncorrected", "Bias corrected"), values = c("solid", "dashed")) +
   facet_grid(score ~ ., scales = "free_y") +
@@ -845,4 +883,59 @@ gp <- ggplot(subset(dat_plot_t, group != "Perfect"),
 ggsave(file_out_scores_mixed_biascor, height=10, width = 10)
 
 
+# drought index time series #--------------------------------------------------
 
+dat_plot_t <- dat_rmse_t %>%
+  filter(predictor != "single_reservoir" & grepl("ensemble|perfect", group)) %>%
+  group_by(group, model, region, year, month) %>%
+  distinct(group, model, region, year, month, value, obs) %>%
+  ungroup() %>%
+  mutate(month = month+1) %>%
+  complete(month = 1:12, nesting(group, model, region, year), fill = list(value = NA, obs=NA)) %>%
+  unite(col=date, year, month, sep="-") %>%
+  mutate(date = ymd(paste(date, "1", sep="-")) - 1)
+dat_plot_t <- bind_rows(dat_plot_t %>%
+                          select(-obs),
+                        dat_plot_t %>%
+                          select(-value, -group) %>%
+                          rename(value = obs) %>%
+                          distinct(region, date, value) %>%
+                          mutate(group = "obs", model = "obs")) %>%
+  mutate(main_group = interaction(factor(group), model)) %>%
+  separate(group, into = c("group", "member"), sep="_", fill = "right")
+  
+
+gp <- ggplot(dat_plot_t, aes(x = date, y = value, group = main_group,
+                       colour = model, size = group, linetype = group, alpha = group)) +
+  geom_line() +
+  scale_x_date(limits = c(ymd("1986-01-01"), ymd("2014-06-30")), date_breaks = "1 year", date_minor_breaks = "1 month") +
+  scale_size_manual(values = c("obs" = 1, "perfect" = 1, "median" = 1, "ensemble" = 0.2)) +
+  scale_linetype_manual(values = c("obs" = "solid", "perfect" = "dotted", "median" = "dashed", "ensemble" = "solid")) +
+  scale_alpha_manual(values = c("obs" = 1, "perfect" = 1, "median" = 1, "ensemble" = 0.2)) +
+  scale_colour_manual(values = c("obs" = "black", "hydmod" = hue_pal()(2)[1], "regression" = hue_pal()(2)[2])) +
+  ylim(c(0,150)) +
+  facet_grid(region ~ .)
+ggsave("test.pdf", gp, width = 20, height = 10)
+
+
+# average regional storage changes #-------------------------------------------
+dat_plot_t <- dat_stor_change %>%
+  filter(month != 0 & !grepl("biascor|resamp|^ensemble", group)) %>%
+  group_by(model, group, realis, month) %>%
+  summarise(mean_change = mean(value_change, na.rm = T)) %>%
+  mutate(month = month(month, label = T, locale = "en_GB.UTF-8")) %>%
+  ungroup() %>%
+  mutate(model = factor(model, c("hydmod", "regression", "obs"), labels = c("Process-based model", "Statistical model", "Observations")),
+         group = factor(group, c("median_ensemble", "perfect", "obs"), labels = c("Hindcast", "Simulation", "Observation")))
+
+gp <- ggplot(dat_plot_t,
+       aes(x = month, y = mean_change, group = interaction(group, model),
+           colour = model, linetype = group, shape = group)) +
+  geom_point(size = 5) +
+  geom_line(size = 1.2) +
+  lims(y = c(-5,20)) +
+  labs(x = "Aggregation month", y = "Regional storage change (percent point)",
+       colour = "Data: ", linetype = "Mode: ", shape = "Mode: ") +
+  theme_bw(base_size = 22) +
+  theme(legend.key.width = unit(50, "pt"))
+ggsave(file_out_storage_change, height = 8, width = 18)
