@@ -936,6 +936,8 @@ gp <- ggplot(dat_plot_t,
   lims(y = c(-5,20)) +
   labs(x = "Aggregation month", y = "Regional storage change (percent point)",
        colour = "Data: ", linetype = "Mode: ", shape = "Mode: ") +
+  scale_color_manual(values = c("Process-based model" = hue_pal()(4)[1], "Statistical model" = hue_pal()(4)[3], "Observations" = hue_pal()(4)[2])) +
+  scale_linetype_manual(values = c("Hindcast" = "solid", "Simulation" = "dashed", "Observation" = "dotted")) +
   theme_bw(base_size = 22) +
   theme(legend.key.width = unit(50, "pt"))
 ggsave(file_out_storage_change, height = 8, width = 18)
