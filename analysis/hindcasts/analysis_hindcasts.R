@@ -704,11 +704,11 @@ ggsave(file_out_reliab_drought, gp_drought, height = 10.5, width = 10)
 
 # merge drouht and bin plot
 gpgr_drought <- ggplotGrob(gp_drought)
-annot <- textGrob(label = "a)", just=c("left", "top"), x=0, y=0, gp = gpar(cex = 2))
+annot <- textGrob(label = "(a)", just=c("left", "top"), x=0, y=0, gp = gpar(cex = 2))
 gpgr_drought <- gtable_add_grob(gpgr_drought, annot, t=1, l=1, r=1, clip = "off")
 
 gpgr_bins <- ggplotGrob(gp_bins)
-annot <- textGrob(label = "b)", just=c("left", "top"), x=0, y=0, gp = gpar(cex = 2))
+annot <- textGrob(label = "(b)", just=c("left", "top"), x=0, y=0, gp = gpar(cex = 2))
 gpgr_bins <- gtable_add_grob(gpgr_bins, annot, t=1, l=1, r=1, clip = "off")
 
 pdf(file_out_reliab_merged, width=15, height=8)
