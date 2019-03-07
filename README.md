@@ -3,6 +3,7 @@ This repository contains data and skripts to investigate and, to some extent, re
 The paper is currently in open review process in the journal HESSD.
 
 Reference (and link):
+[Pilz, T., Delgado, J. M., Voß, S., Vormoor, K., Francke, T., Costa, A. C., Martins, E., and Bronstert, A.: Seasonal drought prediction for semiarid northeast Brazil: About the added value of a process-based hydrological model, Hydrol. Earth Syst. Sci. Discuss., https://doi.org/10.5194/hess-2018-404, in review, 2018](https://www.hydrol-earth-syst-sci-discuss.net/hess-2018-404/)
 
 
 # File structure
