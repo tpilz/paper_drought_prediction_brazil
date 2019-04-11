@@ -1,9 +1,9 @@
-# Seasonal drought prediction for semiarid northeast Brazil: About the added value of a process-based hydrological model
-This repository contains data and skripts to investigate and, to some extent, reproduce experiments, analyses, and figures of the Paper Pilz et al. (2018).
-The paper is currently in open review process in the journal HESSD.
+# Seasonal drought prediction for semiarid northeast Brazil: what is the added value of a process-based hydrological model?
+This repository contains data and skripts to investigate and, to some extent, reproduce experiments, analyses, and figures of the Paper Pilz et al. (2019).
+The paper has been published in the journal _Hydrology and Earth System Sciences_.
 
 Reference (and link):
-[Pilz, T., Delgado, J. M., Voß, S., Vormoor, K., Francke, T., Costa, A. C., Martins, E., and Bronstert, A.: Seasonal drought prediction for semiarid northeast Brazil: About the added value of a process-based hydrological model, Hydrol. Earth Syst. Sci. Discuss., https://doi.org/10.5194/hess-2018-404, in review, 2018](https://www.hydrol-earth-syst-sci-discuss.net/hess-2018-404/)
+[Pilz, T., Delgado, J. M., Voss, S., Vormoor, K., Francke, T., Costa, A. C., Martins, E., and Bronstert, A.: Seasonal drought prediction for semiarid northeast Brazil: what is the added value of a process-based hydrological model?, Hydrol. Earth Syst. Sci., 23, 1951-1971, https://doi.org/10.5194/hess-23-1951-2019, 2019](https://www.hydrol-earth-syst-sci.net/23/1951/2019/)
 
 
 # File structure
